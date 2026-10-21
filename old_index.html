@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>LILLY</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+  <header id="app-header">
+    <div id="header-left">
+      <span class="app-title">LILLY<small style="font-size:0.75rem; color:var(--gemini-text-secondary); font-weight:normal;">... Lemonade Image Lab Locally Yours</small></span>
+      <button id="server-status-pill" class="server-status-pill connected" title="Server Status: Click to configure local server" aria-label="Server status">
+        <span class="status-dot"></span>
+        <span id="status-text">Port 13305 (Connected)</span>
+      </button>
+    </div>
+    <div id="header-right">
+      <select id="model-select" class="header-select" title="Selected Model">
+        <option value="default">Default Model</option>
+      </select>
+      <button id="clear-chat-button" class="header-icon-btn" title="Clear Chat History" aria-label="Clear chat">🗑️</button>
+      <button id="server-settings-button" class="header-icon-btn" title="Server Settings (Port 13305)" aria-label="Server settings">⚙️</button>
+      <button id="gallery-toggle-button" class="header-icon-btn gallery-btn-badge" aria-label="Toggle image gallery" aria-expanded="false" aria-controls="image-gallery-sidebar" title="Toggle Image Gallery">🖼️ Gallery <span id="gallery-count-badge" class="badge-count">0</span></button>
+    </div>
+  </header>
+
+  <div id="main-content-wrapper">
+    <main id="app-container">
+      <div id="empty-chat-placeholder">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">⚡</div>
+        <p class="placeholder-title">LILLY</p>
+        <p class="placeholder-subtitle">Connected to local server at <code id="server-endpoint-display">http://localhost:13305</code></p>
+        <div class="quick-tips-container">
+          <div class="quick-tip-card">
+            <span class="tip-icon">💬</span>
+            <div class="tip-text">
+              <strong>Local LLM Chat</strong>
+              <span>Chat completions with multi-turn conversation memory on port 13305.</span>
+            </div>
+          </div>
+          <div class="quick-tip-card">
+            <span class="tip-icon">🎨</span>
+            <div class="tip-text">
+              <strong>Local Image Gen</strong>
+              <span>Click any style chip below to generate images via local SD/diffusion models.</span>
+            </div>
+          </div>
+          <div class="quick-tip-card">
+            <span class="tip-icon">📎</span>
+            <div class="tip-text">
+              <strong>Multimodal Vision</strong>
+              <span>Drop an image to analyze it or run contextual quick actions.</span>
+            </div>
+          </div>
+          <div class="quick-tip-card">
+            <span class="tip-icon">🔀</span>
+            <div class="tip-text">
+              <strong>Router Policy</strong>
+              <span>Use <code>collection.router</code> for rule routing with decision trace.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="chat-container" role="log" aria-live="polite" style="display: none;">
+        <div id="chat-log">
+          <!-- Chat messages will appear here -->
+        </div>
+      </div>
+
+      <div id="gemini-input-bar">
+        <div id="input-image-preview-container" style="display: none;">
+          <img id="input-image-preview-thumbnail" src="#" alt="Staged image preview"/>
+          <button id="input-image-preview-remove" aria-label="Remove staged image">✕</button>
+        </div>
+        <textarea id="user-input" rows="1" placeholder="Type a message or image prompt, or drop an image..." aria-label="User message input"></textarea>
+        <div id="action-chips-container" role="group" aria-label="Image style selectors">
+          <!-- Style chips will be populated by JS -->
+        </div>
+        <div id="contextual-action-chips-container" role="group" aria-label="Image context action selectors" style="display: none;">
+          <!-- Contextual action chips will be populated by JS -->
+        </div>
+      </div>
+    </main>
+
+    <aside id="image-gallery-sidebar" aria-labelledby="gallery-title">
+      <div class="sidebar-header">
+        <div>
+          <h3 id="gallery-title">🖼️ Image Gallery</h3>
+          <span id="gallery-subtext" style="font-size: 0.72rem; color: var(--gemini-text-secondary);">0 images saved</span>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button id="download-all-gallery-button" class="sidebar-action-button" aria-label="Download all gallery cards as a ZIP file" title="Download all gallery cards as ZIP">📦 Download All</button>
+          <button id="gallery-close-button" class="sidebar-close-btn" aria-label="Close Gallery" title="Close Gallery">&times;</button>
+        </div>
+      </div>
+      <div class="gallery-toolbar">
+        <label for="gallery-file-upload" class="gallery-upload-btn" title="Add an image file to gallery">
+          ➕ Add Image
+          <input type="file" id="gallery-file-upload" accept="image/*" style="display: none;" />
+        </label>
+        <button id="clear-gallery-btn" class="gallery-clear-btn" title="Clear all saved gallery cards">Clear All</button>
+      </div>
+      <div id="gallery-items-container">
+        <!-- Image cards will appear here -->
+      </div>
+    </aside>
+  </div>
+
+  <div id="custom-context-menu" role="menu" style="display:none; position:absolute;">
+    <ul id="context-menu-items" role="none">
+      <!-- Context menu items will be populated by JS -->
+    </ul>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="settings-title">Local Server Settings (Port 13305)</h3>
+        <button id="modal-close-button" class="modal-close-btn" aria-label="Close settings">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-field">
+          <label for="server-url-input">Local Server Base URL</label>
+          <div class="input-with-action">
+            <input type="text" id="server-url-input" value="http://localhost:13305" placeholder="http://localhost:13305" />
+            <button id="btn-test-connection" class="secondary-button" type="button">Test</button>
+          </div>
+          <div class="address-switcher">
+            <span style="font-size: 0.78rem; color: var(--gemini-text-secondary); align-self: center;">Quick pick:</span>
+            <button type="button" class="address-pill" id="pick-localhost">localhost:13305</button>
+            <button type="button" class="address-pill" id="pick-127">127.0.0.1:13305</button>
+          </div>
+          <p class="settings-hint">Configured for Lemonade Server or OpenAI-compatible server on port <code>13305</code>.</p>
+        </div>
+
+        <div class="settings-field">
+          <label class="force-toggle-label">
+            <input type="checkbox" id="force-online-checkbox" />
+            <span>Force Server Online (Assume Port 13305 is active)</span>
+          </label>
+          <p class="settings-hint">Enable this to bypass health probes and always allow sending queries to port 13305.</p>
+        </div>
+
+        <div class="settings-field">
+          <label for="custom-model-input">Model / Router Policy Name</label>
+          <div class="input-with-action">
+            <input type="text" id="custom-model-input" placeholder="e.g. collection.router, qwen2.5, default" />
+            <button type="button" class="router-preset-btn" id="btn-preset-router" title="Set model to Lemonade collection.router policy">🔀 collection.router</button>
+          </div>
+          <p class="settings-hint">Point to <code>collection.router</code> to trigger Lemonade's dynamic model routing policy.</p>
+        </div>
+
+        <div class="settings-field">
+          <label class="force-toggle-label">
+            <input type="checkbox" id="route-trace-checkbox" checked />
+            <span>Enable Route Tracing (<code>route_trace: true</code>)</span>
+          </label>
+          <p class="settings-hint">Requests the decision trace (matched rule ID, candidate destination, and scores) from Lemonade's Router Policy.</p>
+        </div>
+
+        <div class="settings-field">
+          <label for="server-api-key-input">Authorization Token (Optional)</label>
+          <input type="password" id="server-api-key-input" placeholder="Bearer token (if your local server requires auth)" />
+        </div>
+
+        <div id="connection-status-box" class="status-box">
+          <div class="status-box-header">Status: <span id="status-box-indicator">Not checked yet</span></div>
+          <div id="status-box-details" class="status-box-details">Click 'Test' to check connection.</div>
+        </div>
+
+        <div class="troubleshooting-card">
+          <h4>💡 Lemonade Server & CORS on Port 13305:</h4>
+          <ul>
+            <li><strong>Allow Cloud Origin:</strong> In terminal, run: <code>lemonade config set allowed_origins "*"</code></li>
+            <li><strong>Or Run Locally:</strong> Run <code>npm run dev</code> locally and open <code>http://localhost:3000</code>. Loopback is allowed automatically.</li>
+            <li><strong>Switch Address:</strong> Try <code>http://127.0.0.1:13305</code> if <code>localhost</code> is blocked.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-reset-default" class="secondary-button" type="button">Reset to Port 13305</button>
+        <button id="btn-save-settings" class="primary-button" type="button">Save & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox Modal for enlarged image viewing -->
+  <div id="lightbox-modal" class="lightbox-modal" style="display: none;" role="dialog" aria-modal="true" aria-label="Image Preview">
+    <div class="lightbox-content">
+      <button id="lightbox-close-btn" class="lightbox-close-btn" aria-label="Close image">&times;</button>
+      <img id="lightbox-img" src="#" alt="Full size preview" />
+      <div id="lightbox-caption" class="lightbox-caption"></div>
+    </div>
+  </div>
+
+  <script type="module" src="index.tsx"></script>
+</body>
+</html>

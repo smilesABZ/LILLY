@@ -1,0 +1,7 @@
+{
+  "name": "imagen-context-prompt",
+  "description": "Chat and image generation with local server on port 13305",
+  "requestFramePermissions": [],
+  "prompt": "",
+  "majorCapabilities": []
+}
