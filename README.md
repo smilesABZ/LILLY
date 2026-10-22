@@ -1,3 +1,10 @@
+<img width="1532" height="853" alt="Screenshot 2026-10-19 164434" src="https://github.com/user-attachments/assets/8be41941-14ae-4659-8fd9-cb9b4db78196" />
+<img width="1920" height="1032" alt="Screenshot 2026-10-19 173833" src="https://github.com/user-attachments/assets/5494f36c-eb01-4710-98c2-dbd6a0dd8af7" />
+<img width="1921" height="1920" alt="lillyscreen" src="https://github.com/user-attachments/assets/b79af3b3-0a3f-4f9e-b1a6-85496abc1449" />
+
+
+
+
 # Local AI Studio (Port 13305)
 
 A chat and image generation application configured to connect to a local server running on **port 13305** (e.g. Lemonade Server or any OpenAI-compatible local AI server).
